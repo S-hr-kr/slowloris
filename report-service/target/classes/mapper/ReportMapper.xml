@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.slowloris.report.mapper.ReportMapper">
+
+    <select id="selectRecentReports" parameterType="java.lang.Integer" resultType="com.slowloris.report.entity.Report">
+        select
+            id,
+            type,
+            name,
+            description,
+            content,
+            generator,
+            generate_time as generateTime,
+            start_time as startTime,
+            end_time as endTime,
+            status,
+            file_path as filePath,
+            create_time as createTime,
+            update_time as updateTime
+        from report
+        order by generate_time desc
+        limit #{limit}
+    </select>
+
+    <select id="countByType" resultType="java.util.Map">
+        select
+            type,
+            count(1) as count
+        from report
+        group by type
+        order by count desc
+    </select>
+
+    <select id="countByReportType" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        select count(1) from report
+        where type = #{type}
+    </select>
+
+    <select id="countTodayReports" resultType="java.lang.Integer">
+        select count(1) from report
+        where date(generate_time) = curdate()
+    </select>
+
+</mapper>

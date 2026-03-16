@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.slowloris.alert.mapper.AlertMapper">
+
+    <select id="countUnprocessed" resultType="java.lang.Integer">
+        select count(1) from alert where status = 0
+    </select>
+
+    <select id="selectRecentAlerts" parameterType="java.lang.Integer" resultType="com.slowloris.alert.entity.Alert">
+        select
+            id,
+            type,
+            level,
+            status,
+            description,
+            ip_address as ipAddress,
+            port,
+            details,
+            handler,
+            handle_time as handleTime,
+            handle_remark as handleRemark,
+            create_time as createTime,
+            update_time as updateTime
+        from alert
+        order by create_time desc
+        limit #{limit}
+    </select>
+
+    <select id="countByType" resultType="java.util.Map">
+        select
+            type,
+            count(1) as count
+        from alert
+        group by type
+        order by count desc
+    </select>
+
+    <select id="countByLevel" resultType="java.util.Map">
+        select
+            level,
+            count(1) as count
+        from alert
+        group by level
+        order by level desc
+    </select>
+
+    <select id="countTodayAlerts" resultType="java.lang.Integer">
+        select count(1) from alert where date(create_time) = curdate()
+    </select>
+
+    <select id="countDailyAlerts" parameterType="java.lang.Integer" resultType="java.util.Map">
+        select
+            date(create_time) as date,
+            count(1) as count
+        from alert
+        where create_time >= date_sub(curdate(), interval #{days} - 1 day)
+        group by date(create_time)
+        order by date(create_time)
+    </select>
+
+</mapper>

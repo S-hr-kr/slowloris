@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.slowloris.monitor.mapper.IpMonitorMapper">
+
+    <select id="selectByIpAddress" parameterType="java.lang.String" resultType="com.slowloris.monitor.entity.IpMonitor">
+        select
+            id,
+            ip_address as ipAddress,
+            access_count as accessCount,
+            last_access_time as lastAccessTime,
+            traffic_size as trafficSize,
+            status,
+            country,
+            city,
+            isp,
+            create_time as createTime,
+            update_time as updateTime
+        from ip_monitor
+        where ip_address = #{ipAddress}
+    </select>
+
+    <select id="selectAbnormalIps" resultType="com.slowloris.monitor.entity.IpMonitor">
+        select
+            id,
+            ip_address as ipAddress,
+            access_count as accessCount,
+            last_access_time as lastAccessTime,
+            traffic_size as trafficSize,
+            status,
+            country,
+            city,
+            isp,
+            create_time as createTime,
+            update_time as updateTime
+        from ip_monitor
+        where status in (1, 2)
+        order by last_access_time desc
+    </select>
+
+    <select id="selectRecentRecords" parameterType="java.lang.Integer" resultType="com.slowloris.monitor.entity.IpMonitor">
+        select
+            id,
+            ip_address as ipAddress,
+            access_count as accessCount,
+            last_access_time as lastAccessTime,
+            traffic_size as trafficSize,
+            status,
+            country,
+            city,
+            isp,
+            create_time as createTime,
+            update_time as updateTime
+        from ip_monitor
+        order by last_access_time desc
+        limit #{limit}
+    </select>
+
+    <select id="countByStatus" resultType="java.util.Map">
+        select
+            status,
+            count(1) as count
+        from ip_monitor
+        group by status
+        order by status
+    </select>
+
+    <select id="getTodayTraffic" resultType="java.lang.Long">
+        select coalesce(sum(traffic_size), 0)
+        from ip_monitor
+        where date(last_access_time) = curdate()
+    </select>
+
+    <select id="getYesterdayTraffic" resultType="java.lang.Long">
+        select coalesce(sum(traffic_size), 0)
+        from ip_monitor
+        where date(last_access_time) = date_sub(curdate(), interval 1 day)
+    </select>
+
+    <select id="countHourlyTraffic" resultType="java.util.Map">
+        select
+            hour(last_access_time) as hour,
+            coalesce(sum(traffic_size), 0) as traffic
+        from ip_monitor
+        where last_access_time >= date_sub(now(), interval 24 hour)
+        group by hour(last_access_time)
+        order by hour
+    </select>
+
+    <select id="countTrafficByIpSegment" resultType="java.util.Map">
+        select
+            case
+                when ip_address like '192.168.%' then '192.168.0.0/16'
+                when ip_address like '10.%' then '10.0.0.0/8'
+                when ip_address like '172.16.%' then '172.16.0.0/12'
+                else '其他'
+            end as segment,
+            coalesce(sum(traffic_size), 0) as traffic
+        from ip_monitor
+        group by
+            case
+                when ip_address like '192.168.%' then '192.168.0.0/16'
+                when ip_address like '10.%' then '10.0.0.0/8'
+                when ip_address like '172.16.%' then '172.16.0.0/12'
+                else '其他'
+            end
+        order by traffic desc
+    </select>
+
+</mapper>

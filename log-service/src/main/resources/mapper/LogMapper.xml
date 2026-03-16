@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.slowloris.log.mapper.LogMapper">
+
+    <select id="selectRecentLogs" parameterType="java.lang.Integer" resultType="com.slowloris.log.entity.Log">
+        select
+            id,
+            type,
+            operator,
+            ip_address as ipAddress,
+            module,
+            description,
+            method,
+            request_url as requestUrl,
+            request_params as requestParams,
+            status_code as statusCode,
+            execution_time as executionTime,
+            error_info as errorInfo,
+            browser,
+            os,
+            create_time as createTime
+        from sys_log
+        order by create_time desc
+        limit #{limit}
+    </select>
+
+    <select id="countByType" resultType="java.util.Map">
+        select
+            type,
+            count(1) as count
+        from sys_log
+        group by type
+        order by count desc
+    </select>
+
+    <select id="countByModule" resultType="java.util.Map">
+        select
+            module,
+            count(1) as count
+        from sys_log
+        where module is not null
+        group by module
+        order by count desc
+        limit 10
+    </select>
+
+    <select id="countTodayAccess" resultType="java.lang.Integer">
+        select count(1) from sys_log
+        where type = 2
+        and date(create_time) = curdate()
+    </select>
+
+    <select id="countTodayErrors" resultType="java.lang.Integer">
+        select count(1) from sys_log
+        where type = 3
+        and date(create_time) = curdate()
+    </select>
+
+</mapper>
