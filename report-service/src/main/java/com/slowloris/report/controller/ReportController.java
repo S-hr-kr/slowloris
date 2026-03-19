@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/")
+@RequestMapping("")
 public class ReportController {
 
     @Autowired
