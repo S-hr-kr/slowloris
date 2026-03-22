@@ -30,13 +30,6 @@ spring:
       password: default
       database: 0
 
-# LangChain4J Configuration
-langchain4j:
-  openai:
-    api-key: ${OPENAI_API_KEY:your-api-key-here}
-    model: gpt-3.5-turbo
-    temperature: 0.3
-
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
   type-aliases-package: com.slowloris.monitor.entity
@@ -53,3 +46,10 @@ management:
   endpoint:
     health:
       show-details: always
+
+deepseek:
+  api:
+    key: ${DEEPSEEK_API_KEY}
+    model: deepseek-chat
+    baseUrl: https://api.deepseek.com/v1
+    temperature: 0.7

@@ -105,5 +105,19 @@
             end
         order by traffic desc
     </select>
+    <select id="sumTotalTraffic" resultType="java.lang.Long">
+        select coalesce(sum(traffic_size), 0)
+        from ip_monitor
+    </select>
+    <select id="countMinuteRequests" resultType="java.lang.Integer">
+        select count(1)
+        from ip_monitor
+        where last_access_time >= date_sub(now(), interval 1 minute)
+    </select>
+    <select id="avgMinuteResponseTime" resultType="java.lang.Double">
+        select avg(response_time)
+        from ip_monitor
+        where last_access_time >= date_sub(now(), interval 1 minute)
+    </select>
 
 </mapper>

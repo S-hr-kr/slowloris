@@ -60,4 +60,23 @@ public interface IpMonitorMapper extends BaseMapper<IpMonitor> {
      */
     List<Map<String, Object>> countTrafficByIpSegment();
 
+    /**
+     * 计算总流量
+     * @return 总流量
+     */
+    Long sumTotalTraffic();
+
+    /**
+     * 按分钟统计请求次数
+     * @param minuteStr 分钟字符串
+     * @return 请求次数
+     */
+    int countMinuteRequests(String minuteStr);
+
+    /**
+     * 按分钟统计平均响应时间
+     * @param minuteStr 分钟字符串
+     * @return 平均响应时间
+     */
+    double avgMinuteResponseTime(String minuteStr);
 }
