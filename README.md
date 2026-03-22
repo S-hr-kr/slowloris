@@ -28,12 +28,6 @@
 3. 安装 Redis 6.0+
 4. 安装 Nacos 2.0+（用于服务注册与发现）
 
-## 数据库配置
-
-1. 创建数据库 `slowloris`
-2. 用户名：root
-3. 密码：Root@123456
-4. 数据库连接 URL：`jdbc:mysql://localhost:3306/slowloris?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai`
 
 ## 启动步骤
 
