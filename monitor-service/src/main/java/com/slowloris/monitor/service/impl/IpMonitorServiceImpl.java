@@ -85,7 +85,7 @@ public class IpMonitorServiceImpl extends ServiceImpl<IpMonitorMapper, IpMonitor
     // ======================== 核心业务方法（真实逻辑） ========================
 
     /**
-     * 根据IP查询监控记录（数据库+Redis缓存）
+     * 根据IP查询监控记录
      */
     @Override
     public IpMonitor getByIpAddress(String ipAddress) {
@@ -107,7 +107,7 @@ public class IpMonitorServiceImpl extends ServiceImpl<IpMonitorMapper, IpMonitor
     }
 
     /**
-     * 更新IP访问记录（真实流量+响应时间统计）
+     * 更新IP访问记录
      */
     @Override
     public void updateAccessRecord(String ipAddress, long trafficSize) {
@@ -161,7 +161,7 @@ public class IpMonitorServiceImpl extends ServiceImpl<IpMonitorMapper, IpMonitor
     }
 
     /**
-     * 获取异常IP列表（真实数据库查询）
+     * 获取异常IP列表
      */
     @Override
     public List<IpMonitor> getAbnormalIps() {
@@ -175,7 +175,7 @@ public class IpMonitorServiceImpl extends ServiceImpl<IpMonitorMapper, IpMonitor
     }
 
     /**
-     * 获取最近访问记录（真实分页+排序）
+     * 获取最近访问记录
      */
     @Override
     public List<IpMonitor> getRecentRecords(int limit) {
@@ -185,7 +185,7 @@ public class IpMonitorServiceImpl extends ServiceImpl<IpMonitorMapper, IpMonitor
     }
 
     /**
-     * 流量分析（真实Redis+数据库统计）
+     * 流量分析
      */
     @Override
     public TrafficAnalysisVo getTrafficAnalysis() {
@@ -210,7 +210,7 @@ public class IpMonitorServiceImpl extends ServiceImpl<IpMonitorMapper, IpMonitor
         }
         vo.setGrowthRate(growthRate);
 
-        // 4. 小时级流量（Redis+数据库补充）
+        // 4. 小时级流量
         List<Map<String, Object>> hourlyTraffic = new ArrayList<>();
         Map<Integer, Long> hourTrafficMap = new HashMap<>();
 
@@ -271,7 +271,7 @@ public class IpMonitorServiceImpl extends ServiceImpl<IpMonitorMapper, IpMonitor
     }
 
     /**
-     * 根据状态筛选IP（真实条件查询）
+     * 根据状态筛选IP
      */
     @Override
     public List<IpMonitor> getIpsByStatus(Integer status) {
@@ -292,7 +292,7 @@ public class IpMonitorServiceImpl extends ServiceImpl<IpMonitorMapper, IpMonitor
     }
 
     /**
-     * 获取IP列表（分页+筛选+风险分数）
+     * 获取IP列表
      */
     @Override
     public Result<Map<String, Object>> getIpList(Integer page, Integer limit, String status) {
