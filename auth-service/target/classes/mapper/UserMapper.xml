@@ -9,6 +9,8 @@
             password,
             roles,
             status,
+            email,
+            avatar,
             create_time as createTime,
             update_time as updateTime,
             deleted

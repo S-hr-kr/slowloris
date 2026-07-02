@@ -41,10 +41,17 @@ public class TrafficCollectFilter implements GlobalFilter, Ordered {
         String ip = resolveClientIp(request);
         if (ip == null || ip.isBlank()) return chain.filter(exchange);
 
+        // 目标主机：优先 Host 头，便于 monitor-service 按目标聚合
+        String target = request.getHeaders().getFirst("Host");
+        if (target != null && target.contains(":")) {
+            target = target.substring(0, target.indexOf(':'));
+        }
+        final String targetHost = (target != null && !target.isBlank()) ? target : "gateway";
+
         // 异步上报，不阻塞主链路
         webClient.post()
                 .uri(monitorServiceUrl + "/traffic/record")
-                .bodyValue(Map.of("ip", ip, "size", 0))
+                .bodyValue(Map.of("ip", ip, "target", targetHost, "size", 0))
                 .retrieve()
                 .bodyToMono(Void.class)
                 .subscribeOn(Schedulers.boundedElastic())

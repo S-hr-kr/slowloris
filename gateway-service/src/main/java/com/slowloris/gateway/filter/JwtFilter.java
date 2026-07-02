@@ -35,17 +35,19 @@ public class JwtFilter extends AbstractGatewayFilterFactory<JwtFilter.Config> {
             String path = request.getURI().getPath();
 
             // Skip authentication for OPTIONS requests
-            if (request.getMethod().name().equals("OPTIONS")) {
+            if (request.getMethod() != null && "OPTIONS".equals(request.getMethod().name())) {
                 return chain.filter(exchange);
             }
 
-            // Skip authentication for login, register, verify and health endpoints
+            // Skip authentication for public and internal endpoints
             if (path.startsWith("/login") ||
                 path.startsWith("/register") ||
                 path.startsWith("/verify") ||
                 path.startsWith("/health") ||
                 path.startsWith("/auth/verify") ||
                 path.startsWith("/auth/health") ||
+                path.startsWith("/wechat/") ||
+                path.startsWith("/internal/") ||
                 path.startsWith("/ws/")) {
                 return chain.filter(exchange);
             }
@@ -66,11 +68,21 @@ public class JwtFilter extends AbstractGatewayFilterFactory<JwtFilter.Config> {
                         .getPayload();
 
                 // Add user info to headers
+                List<?> rolesList = claims.get("roles", List.class);
+                String rolesStr = "";
+                if (rolesList != null && !rolesList.isEmpty()) {
+                    StringBuilder sb = new StringBuilder();
+                    for (Object role : rolesList) {
+                        if (sb.length() > 0) sb.append(",");
+                        sb.append(role);
+                    }
+                    rolesStr = sb.toString();
+                }
                 request = request.mutate()
                         .header("user-id", claims.get("userId", String.class))
                         .header("username", claims.get("username", String.class))
                         .header("token", token)
-                        .header("roles", String.join(",", claims.get("roles", List.class)))
+                        .header("roles", rolesStr)
                         .build();
 
                 exchange = exchange.mutate().request(request).build();

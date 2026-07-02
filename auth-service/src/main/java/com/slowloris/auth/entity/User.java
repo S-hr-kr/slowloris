@@ -63,4 +63,9 @@ public class User implements Serializable {
      */
     private String email;
 
+    /**
+     * 头像（Base64 Data URL，前端已压缩，可为空）
+     */
+    private String avatar;
+
 }

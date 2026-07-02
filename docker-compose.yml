@@ -2,16 +2,23 @@ version: '3.8'
 
 services:
   mysql:
-    image: mysql:8.0
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/mysql:8.0
     container_name: mysql
+    restart: unless-stopped
+    command: --performance_schema=OFF --innodb_buffer_pool_size=80M --innodb_log_buffer_size=8M --max_connections=25 --table_open_cache=32 --thread_cache_size=4
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_DATABASE: slowloris
     volumes:
       - ./data/mysql:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./nacos-init.sql:/docker-entrypoint-initdb.d/02-nacos.sql
     networks:
       - micro-net
+    deploy:
+      resources:
+        limits:
+          memory: 256m
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_PASSWORD}"]
       interval: 10s
@@ -19,17 +26,23 @@ services:
       retries: 10
 
   redis:
-    image: redis:7-alpine
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/redis:7-alpine
     container_name: redis
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 64mb --maxmemory-policy allkeys-lru --save ""
     volumes:
       - ./data/redis:/data
     networks:
       - micro-net
+    deploy:
+      resources:
+        limits:
+          memory: 96m
 
   nacos:
-    image: nacos/nacos-server:v2.3.0
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/nacos/nacos-server:v2.3.0
     container_name: nacos
+    restart: unless-stopped
     environment:
       MODE: standalone
       SPRING_DATASOURCE_PLATFORM: mysql
@@ -39,30 +52,50 @@ services:
       MYSQL_SERVICE_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_SERVICE_PORT: 3306
       NACOS_AUTH_ENABLE: "true"
+      NACOS_AUTH_TOKEN: ${NACOS_AUTH_TOKEN:-change-me-to-a-random-base64-string}
+      NACOS_AUTH_IDENTITY_KEY: ${NACOS_AUTH_IDENTITY_KEY:-serverIdentity}
+      NACOS_AUTH_IDENTITY_VALUE: ${NACOS_AUTH_IDENTITY_VALUE:-security}
+      JVM_XMS: 64m
+      JVM_XMX: 128m
+      JVM_XMN: 24m
+      JVM_MS: 16m
+      JVM_MMS: 32m
     ports:
-      - "8848:8848"
+      - "127.0.0.1:8848:8848"
+      - "127.0.0.1:9848:9848"
     depends_on:
       mysql:
         condition: service_healthy
     networks:
       - micro-net
+    deploy:
+      resources:
+        limits:
+          memory: 220m
 
   gateway-service:
     build: ./gateway-service
     container_name: gateway-service
+    restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "8090:8080"
     environment:
       SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
       SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
+      JAVA_OPTS: "-Xms32m -Xmx80m -XX:+UseSerialGC -XX:MaxMetaspaceSize=56m -XX:ReservedCodeCacheSize=32m"
     depends_on:
       - nacos
     networks:
       - micro-net
+    deploy:
+      resources:
+        limits:
+          memory: 200m
 
   auth-service:
     build: ./auth-service
     container_name: auth-service
+    restart: unless-stopped
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/slowloris?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
@@ -72,6 +105,10 @@ services:
       SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
       SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
       SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
+      WECHAT_APP_ID: ${WECHAT_APP_ID:-wx_placeholder}
+      WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-placeholder}
+      WECHAT_CALLBACK_URL: ${WECHAT_CALLBACK_URL:-http://47.108.181.2:8090/api/wechat/callback}
+      JAVA_OPTS: "-Xms32m -Xmx80m -XX:+UseSerialGC -XX:MaxMetaspaceSize=56m -XX:ReservedCodeCacheSize=32m"
     depends_on:
       mysql:
         condition: service_healthy
@@ -79,10 +116,15 @@ services:
         condition: service_started
     networks:
       - micro-net
+    deploy:
+      resources:
+        limits:
+          memory: 200m
 
   monitor-service:
     build: ./monitor-service
     container_name: monitor-service
+    restart: unless-stopped
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/slowloris?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
@@ -92,7 +134,9 @@ services:
       SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
       SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
       SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
-      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      AGENT_REPORT_URL: http://47.108.181.2:8090
+      JAVA_OPTS: "-Xms32m -Xmx80m -XX:+UseSerialGC -XX:MaxMetaspaceSize=56m -XX:ReservedCodeCacheSize=32m"
     depends_on:
       mysql:
         condition: service_healthy
@@ -100,10 +144,15 @@ services:
         condition: service_started
     networks:
       - micro-net
+    deploy:
+      resources:
+        limits:
+          memory: 200m
 
-  alert-service:
-    build: ./alert-service
-    container_name: alert-service
+  alert-log-service:
+    build: ./alert-log-service
+    container_name: alert-log-service
+    restart: unless-stopped
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/slowloris?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
@@ -113,7 +162,7 @@ services:
       SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
       SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
       SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
-      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      JAVA_OPTS: "-Xms32m -Xmx80m -XX:+UseSerialGC -XX:MaxMetaspaceSize=56m -XX:ReservedCodeCacheSize=32m"
     depends_on:
       mysql:
         condition: service_healthy
@@ -121,77 +170,26 @@ services:
         condition: service_started
     networks:
       - micro-net
-
-  log-service:
-    build: ./log-service
-    container_name: log-service
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/slowloris?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
-      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
-      SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
-    depends_on:
-      mysql:
-        condition: service_healthy
-      nacos:
-        condition: service_started
-    networks:
-      - micro-net
-
-  report-service:
-    build: ./report-service
-    container_name: report-service
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/slowloris?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
-      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
-      SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
-    depends_on:
-      mysql:
-        condition: service_healthy
-      nacos:
-        condition: service_started
-    networks:
-      - micro-net
-
-  prediction-service:
-    build: ./prediction-service
-    container_name: prediction-service
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/slowloris?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
-      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
-      SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
-      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
-    depends_on:
-      mysql:
-        condition: service_healthy
-      nacos:
-        condition: service_started
-    networks:
-      - micro-net
+    deploy:
+      resources:
+        limits:
+          memory: 200m
 
   frontend:
-    build: ../slowloris_vue
+    build: ../frontend
     container_name: frontend
+    restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     depends_on:
       - gateway-service
     networks:
       - micro-net
+    deploy:
+      resources:
+        limits:
+          memory: 48m
 
 networks:
   micro-net:
