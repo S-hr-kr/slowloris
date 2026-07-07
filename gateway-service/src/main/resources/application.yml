@@ -12,11 +12,11 @@ spring:
       discovery:
         server-addr: localhost:8848
         username: nacos
-        password: nacos
+        password: ${NACOS_PASSWORD:nacos}
       config:
         server-addr: localhost:8848
         username: nacos
-        password: nacos
+        password: ${NACOS_PASSWORD:nacos}
         file-extension: yml
     gateway:
       routes:
@@ -94,7 +94,7 @@ spring:
 
 # JWT（与 auth-service 保持一致，生产环境通过环境变量注入）
 jwt:
-  secret: ${JWT_SECRET:change-me-to-a-random-64-char-string-for-hs512-algorithm}
+  secret: ${JWT_SECRET}
   expiration: 86400000
 
 management:

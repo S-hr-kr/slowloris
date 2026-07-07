@@ -107,7 +107,7 @@ services:
       SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
       WECHAT_APP_ID: ${WECHAT_APP_ID:-wx_placeholder}
       WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-placeholder}
-      WECHAT_CALLBACK_URL: ${WECHAT_CALLBACK_URL:-http://47.108.181.2:8090/api/wechat/callback}
+      WECHAT_CALLBACK_URL: ${WECHAT_CALLBACK_URL:-http://your-server-ip:8090/api/wechat/callback}
       JAVA_OPTS: "-Xms32m -Xmx80m -XX:+UseSerialGC -XX:MaxMetaspaceSize=56m -XX:ReservedCodeCacheSize=32m"
     depends_on:
       mysql:
@@ -135,7 +135,7 @@ services:
       SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
       SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: nacos:8848
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
-      AGENT_REPORT_URL: http://47.108.181.2:8090
+      AGENT_REPORT_URL: ${AGENT_REPORT_URL:-http://your-server-ip:8090}
       JAVA_OPTS: "-Xms32m -Xmx80m -XX:+UseSerialGC -XX:MaxMetaspaceSize=56m -XX:ReservedCodeCacheSize=32m"
     depends_on:
       mysql:

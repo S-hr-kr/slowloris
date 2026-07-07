@@ -12,24 +12,24 @@ spring:
       discovery:
         server-addr: localhost:8848
         username: nacos
-        password: nacos
+        password: ${NACOS_PASSWORD:nacos}
       config:
         server-addr: localhost:8848
         username: nacos
-        password: nacos
+        password: ${NACOS_PASSWORD:nacos}
         file-extension: yml
         namespace: public
         group: DEFAULT_GROUP
   datasource:
     url: jdbc:mysql://localhost:3305/slowloris?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
-    password: Root@123456
+    password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:
       host: localhost
       port: 6378
-      password: default
+      password: ${REDIS_PASSWORD}
       database: 0
 
 mybatis-plus:
