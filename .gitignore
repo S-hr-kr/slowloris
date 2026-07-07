@@ -1,3 +1,7 @@
+# ======== 前端（slowloris_vue）========
+slowloris_vue/node_modules/
+slowloris_vue/dist/
+
 # ======== 敏感文件（密钥 / 密码）========
 .env
 *.env
